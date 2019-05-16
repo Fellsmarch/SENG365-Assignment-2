@@ -1,0 +1,123 @@
+<template>
+    <div id="app">
+        <!--Nav bar-->
+        <b-navbar toggleable="lg" type="dark" variant="dark" id="navBar">
+            <b-navbar-brand href="#">YeetEA</b-navbar-brand>
+            <b-navbar-nav>
+                <b-nav-item :to="{ name: 'home' }">Home</b-nav-item>
+                <b-nav-item :to="{ name: 'venues' }">Venues</b-nav-item>
+                <b-nav-item :to="{ name: 'users' }">Users</b-nav-item>
+            </b-navbar-nav>
+            <b-navbar-nav class="ml-auto">
+                <div v-if="isAuth()">
+                    <b-nav-text>
+                        {{ this.username }}
+                    </b-nav-text>
+                    <!--<b-nav-item v-on:click="logOut">Log Out</b-nav-item>-->
+                    <!--<li class="b-nav-item">-->
+                        <!--<span class="navbar-text">{{ this.username }}</span>-->
+                    <!--</li>-->
+                    <li class="b-nav-item">
+                        <a v-on:click="logOut" href="" class="nav-link">Logout</a>
+                    </li>
+                </div>
+
+                <div v-else>
+                    <b-nav-item :to="{ name: 'login' }">Login</b-nav-item>
+                    <b-nav-item :to="{ name: 'signup' }">Sign Up</b-nav-item>
+                </div>
+            </b-navbar-nav>
+        </b-navbar>
+
+        <!--Display next page-->
+        <router-view></router-view>
+    </div>
+</template>
+
+
+<script>
+    import url from "./url.js";
+
+    export default {
+        computed: {
+            // isAuth() {
+            //     return this.$cookies.isKey('user_session');
+            // }
+        },
+        name: 'app',
+        data () {
+            return {
+                isAuth: function () {
+                    // this.username = this.$cookies.get("username");
+                    return this.$cookies.isKey("user_session");
+                },
+                username: this.$cookies.get("username")
+            };
+        },
+
+        updated: function() {
+            this.username = this.$cookies.get("username");
+        },
+
+        methods: {
+            logOut() {
+                let config = {
+                    headers: {
+                        "X-Authorization": this.$cookies.get("user_session")
+                    }
+                };
+                this.$http.post(url + "/users/logout", null, config)
+                    .then(function(response) {
+                        this.username = "";
+                        this.$cookies.remove("user_session");
+                        this.$cookies.remove("user_id");
+                        this.$cookies.remove("username");
+                        this.$router.push("/");
+                        console.log(response);
+                    }, function(error) {
+                        if (error.status === 401) {
+                            this.$cookies.remove("user_session");
+                            this.cookies.remove("user_id");
+                            this.cookies.remove("username");
+                            alert("ERROR: You are already logged out!");
+                        } else {
+                            alert("Error logging out");
+                        }
+                    });
+            },
+        }
+    }
+</script>
+
+<style>
+#app {
+  /*font-family: 'Avenir', Helvetica, Arial, sans-serif;*/
+   /*-webkit-font-smoothing: antialiased;*/
+   /*-moz-osx-font-smoothing: grayscale;*/
+  /*text-align: center;*/
+  /*color: #2c3e50;*/
+  /*margin-top: 60px;*/
+}
+
+#navBar {
+    margin-bottom: 15px;
+}
+
+h1, h2 {
+  font-weight: normal;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  display: inline-block;
+  margin: 0 10px;
+}
+
+a {
+  color: #42b983;
+}
+</style>
