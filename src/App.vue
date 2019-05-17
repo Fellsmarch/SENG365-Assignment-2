@@ -77,8 +77,8 @@
                     }, function(error) {
                         if (error.status === 401) {
                             this.$cookies.remove("user_session");
-                            this.cookies.remove("user_id");
-                            this.cookies.remove("username");
+                            this.$cookies.remove("user_id");
+                            this.$cookies.remove("username");
                             alert("ERROR: You are already logged out!");
                         } else {
                             alert("Error logging out");
