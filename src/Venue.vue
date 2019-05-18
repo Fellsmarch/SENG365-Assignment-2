@@ -3,7 +3,7 @@
         <b-container fluid>
             <b-row>
                 <!--Venue information and primary photo-->
-                <b-col sm="4">
+                <b-col sm="5">
                     <div id="loading" class="text-center" v-if="!loadingComplete">
                         <b-spinner class="align-middle "></b-spinner>
                         <strong>Loading...</strong>
@@ -30,10 +30,12 @@
                                 <h4>Description: </h4>
                             </b-col>
                             <b-col sm="8">
-                                <!--<h5>{{ venueData.shortDescription }}</h5>-->
-                                <h5>
-                                <read-more more-str="more" :text="extendedDescription" link="#" less-str="less" :max-chars="venueData.shortDescription.length"></read-more>
-                               </h5>
+                                <div class="descriptions" style="transition: all 1s;">
+                                    <h5>
+                                        {{ description }}
+                                        <a class="showMore" v-on:click="showMore()">{{ showText }}</a>
+                                    </h5>
+                                </div>
                             </b-col>
 
                         </b-row>
@@ -89,13 +91,13 @@
                         </b-row>
                     </div>
 
-                    <b-card class="mt-3" header="Form Data Result">
-                        <pre class="m-0">{{ venueData }}</pre>
-                    </b-card>
+                    <!--<b-card class="mt-3" header="Form Data Result">-->
+                        <!--<pre class="m-0">{{ venueData }}</pre>-->
+                    <!--</b-card>-->
                 </b-col>
 
                 <!--Venue photos and reviews-->
-                <b-col sm="8">
+                <b-col sm="7">
                     <b-row>
                         <b-card header="Photos" border-variant="primary" header-bg-variant="primary" header-text-variant="white" style="min-width: 50rem">
                             <div>
@@ -145,7 +147,8 @@
                 images: [],
                 index: null,
                 detailsShowing: false,
-                extendedDescription: "",
+                description: null,
+                showText: "More",
             }
         },
 
@@ -171,7 +174,11 @@
                         this.images.push(photoUrl);
                     }
 
-                    this.extendedDescription = this.venueData.shortDescription + this.venueData.longDescription + " yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeet";
+                    if (this.venueData.longDescription) {
+                        this.description = this.venueData.shortDescription + "...";
+                    } else {
+                        this.description = this.venueData.shortDescription
+                    }
 
                     let dateParts = this.venueData.dateAdded.split("-");
                     let jsDate = new Date(dateParts[0], dateParts[1] -1, dateParts[2].substr(0,2));
@@ -220,6 +227,23 @@
         methods: {
             toggleDetails: function() {
                 this.detailsShowing = !this.detailsShowing;
+            },
+
+            showMore: function() {
+                if (this.detailsShowing) {
+                    if (this.venueData.longDescription) {
+                        this.description = this.venueData.shortDescription + "...";
+                    } else {
+                        this.description = this.venueData.shortDescription
+                    }
+
+                    this.showText = "More";
+                } else {
+                    this.description = this.venueData.shortDescription + " " + this.venueData.longDescription;
+                    this.showText = "Less";
+                }
+
+                this.detailsShowing = !this.detailsShowing
             }
         }
     }
@@ -254,9 +278,16 @@
         margin: 5px;
     }
 
-    #moreLess {
+    .showMore {
+        /*text-decoration: underline !important;*/
+        /*border-bottom: 1px solid currentColor;*/
+        font-size: small;
+    }
+
+    .showMore:hover {
+        color: #0000EE !important;
         cursor: pointer;
-        color: aqua;
+
     }
 
 </style>

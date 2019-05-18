@@ -54,6 +54,10 @@
                     </div>
                 </template>
 
+                <template slot="meanStarRating" slot-scope="row">
+                    <star-rating :rating="row.item.meanStarRating" :round-star-rating="false"></star-rating>
+                </template>
+
                 <div slot="table-busy" class="text-center text-danger my-2">
                     <b-spinner class="align-middle"></b-spinner>
                     <strong>Loading...</strong>
