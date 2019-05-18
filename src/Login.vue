@@ -101,20 +101,22 @@
                                 this.$http.get(url + "/users/" + response.body.userId)
                                     .then(function(userResponse) {
                                         this.$cookies.set("username", userResponse.body.username);
+
+                                        this.$cookies.set("user_session", response.body.token);
+                                        this.$cookies.set("user_id", response.body.userId);
+
+                                        if (this.$cookies.isKey("previous_page")) {
+                                            let previousPage = this.$cookies.get("previous_page");
+                                            this.$cookies.remove("previous_page");
+                                            this.$router.push(previousPage);
+                                        } else {
+                                            this.$router.push("/");
+                                        }
                                     }, function(userError) {
                                         alert("Error logging in: " + userError.statusText);
                                     });
                             }
-                            this.$cookies.set("user_session", response.body.token);
-                            this.$cookies.set("user_id", response.body.userId);
 
-                            if (this.$cookies.isKey("previous_page")) {
-                                let previousPage = this.$cookies.get("previous_page");
-                                this.$cookies.remove("previous_page");
-                                this.$router.push(previousPage);
-                            } else {
-                                this.$router.push("/");
-                            }
                         }, function(error) {
                             alert(error.statusText);
                         });

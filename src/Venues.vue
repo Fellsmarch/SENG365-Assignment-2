@@ -72,6 +72,10 @@
             </b-table>
         </b-container>
 
+        <b-modal id="newVenueModal" title="Add New Venue">
+            <pre>Hello</pre>
+        </b-modal>
+
     </div>
 </template>
 
@@ -206,12 +210,10 @@
 
             newVenue: function() {
                 if (!this.$cookies.isKey("user_session")) {
-                    console.log(this.$router.currentRoute);
-                    console.log(this.$router.currentRoute.fullPath);
                     this.$cookies.set("previous_page", this.$router.currentRoute.fullPath + "/add");
                     this.$router.push("/login");
                 } else {
-                    this.$router.push("/venues/add");
+                    this.$root.$emit('bv::show::modal', "newVenueModal");
                 }
             }
 

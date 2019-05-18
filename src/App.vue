@@ -2,7 +2,7 @@
     <div id="app">
         <!--Nav bar-->
         <b-navbar toggleable="lg" type="dark" variant="dark" id="navBar">
-            <b-navbar-brand href="#">YeetEA</b-navbar-brand>
+            <b-navbar-brand :to="{ name: 'home' }">YeetEA</b-navbar-brand>
             <b-navbar-nav>
                 <b-nav-item :to="{ name: 'home' }">Home</b-nav-item>
                 <b-nav-item :to="{ name: 'venues' }">Venues</b-nav-item>
@@ -23,8 +23,8 @@
                 </div>
 
                 <div v-else>
-                    <b-nav-item :to="{ name: 'login' }">Login</b-nav-item>
-                    <b-nav-item :to="{ name: 'signup' }">Sign Up</b-nav-item>
+                    <b-nav-item v-on:click="login">Login</b-nav-item>
+                    <b-nav-item v-on:click="signUp">Sign Up</b-nav-item>
                 </div>
             </b-navbar-nav>
         </b-navbar>
@@ -88,7 +88,16 @@
                         }
                     });
             },
-        }
+            login: function() {
+                this.$cookies.set("previous_page", this.$router.currentRoute.fullPath);
+                this.$router.push("/login");
+            },
+            signUp: function() {
+                this.$cookies.set("previous_page", this.$router.currentRoute.fullPath);
+                this.$router.push("/signup");
+            }
+        },
+
     }
 </script>
 
