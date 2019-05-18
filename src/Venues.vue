@@ -55,7 +55,7 @@
                 </template>
 
                 <template slot="meanStarRating" slot-scope="row">
-                    <star-rating :rating="row.item.meanStarRating" :round-star-rating="false"></star-rating>
+                    <star-rating :rating="row.item.meanStarRating" :round-star-rating="false" :read-only="true" :increment="0.1" :star-size="25"></star-rating>
                 </template>
 
                 <div slot="table-busy" class="text-center text-danger my-2">

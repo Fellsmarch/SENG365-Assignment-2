@@ -76,7 +76,7 @@
                             </b-col>
 
                             <b-col sm="8">
-                                <h5>{{ meanStarRating }}</h5>
+                                <star-rating :rating="meanStarRating" :round-star-rating="false" :read-only="true" :increment="0.1" :star-size="25" style="font-size: 1.25rem;"></star-rating>
                             </b-col>
                         </b-row>
 
@@ -127,7 +127,6 @@
 
 <script>
     import url from "./url.js";
-    import VueGallery from 'vue-gallery';
 
     export default {
         computed: {
@@ -152,11 +151,8 @@
             }
         },
 
-        components: {
-            'gallery': VueGallery,
-        },
-
         mounted: function() {
+            let comp = this;
             this.$http.get(url + "/venues/" + this.$route.params.venueId)
                 .then(function(response) {
                     this.venueData = response.body;
@@ -197,7 +193,7 @@
                             let venues = venuesResponse.body;
                             for (let i = 0; i < venues.length; i++) {
                                 let venue = venues[i];
-                                if (venue.venueId.toString() === this.$route.params.venueId) {
+                                if (venue.venueId.toString() == this.$route.params.venueId) {
 
                                     if (!venue.meanStarRating) {
                                         this.meanStarRating = 3;
@@ -212,12 +208,15 @@
                                     }
                                     break;
                                 }
-                            }
-                        }, function(venuesError) {
-                            alert("Error getting detailed venue information:\n" + venuesError.statusText);
-                        });
 
+
+                            }
+
+                        }, function(venuesError) {
+                            alert("Error getting venue ratings:\n" + venuesError.statusText);
+                        });
                     this.loadingComplete = true;
+
 
                 }, function(error) {
                     alert(error.statusText);

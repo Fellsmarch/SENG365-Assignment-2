@@ -11,6 +11,7 @@ import VueResource from 'vue-resource';
 import BootstrapVue from 'bootstrap-vue';
 import VueCookies from 'vue-cookies';
 import StarRating from 'vue-star-rating';
+import VueGallery from 'vue-gallery';
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 
@@ -18,7 +19,8 @@ Vue.use(VueRouter);
 Vue.use(VueResource);
 Vue.use(BootstrapVue);
 Vue.use(VueCookies);
-Vue.use(StarRating);
+Vue.component('star-rating', StarRating);
+Vue.component('gallery', VueGallery);
 
 Vue.http.options.emulateJSON = true;
 
