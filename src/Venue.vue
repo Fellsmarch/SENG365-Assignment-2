@@ -152,7 +152,7 @@
         },
 
         mounted: function() {
-            let comp = this;
+            this.$cookies.remove("previous_page");
             this.$http.get(url + "/venues/" + this.$route.params.venueId)
                 .then(function(response) {
                     this.venueData = response.body;

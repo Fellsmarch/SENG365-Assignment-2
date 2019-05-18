@@ -18,13 +18,20 @@
                     <b-form-group label-cols-sm="2" label="Filter:" class="mb-1">
                         <b-input-group>
                             <b-form-input v-model="filter" placeholder="Type to Search​" v-on:click="filter = ''"></b-form-input>
-                            <b-input-group-append>
+                            <!--<b-input-group-append>-->
                                 <!--<b-button :disabled="!filter" @click="filter = ''">Clear</b-button>-->
-                            </b-input-group-append>
+                            <!--</b-input-group-append>-->
                         </b-input-group>
                     </b-form-group>
                 </b-col>
+
+                <b-col sm="8">
+                    <b-button v-on:click="newVenue" variant="primary">
+                        Add Venue
+                    </b-button>
+                </b-col>
             </b-row>
+
 
 
 
@@ -132,6 +139,7 @@
 
         },
         mounted: function() {
+            this.$cookies.remove("previous_page");
             let vueComp = this;
             this.$http.get(url + "/venues")
                 .then(function(response) {
@@ -195,6 +203,17 @@
                     return data.venueName.includes(string);
                 }
             },
+
+            newVenue: function() {
+                if (!this.$cookies.isKey("user_session")) {
+                    console.log(this.$router.currentRoute);
+                    console.log(this.$router.currentRoute.fullPath);
+                    this.$cookies.set("previous_page", this.$router.currentRoute.fullPath + "/add");
+                    this.$router.push("/login");
+                } else {
+                    this.$router.push("/venues/add");
+                }
+            }
 
         }
     }

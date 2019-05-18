@@ -43,6 +43,7 @@
             </b-form-group>
 
             <b-button type="submit" variant="primary">Login</b-button>
+            <b-button v-on:click="signUp">Sign Up</b-button>
         </b-form>
 
         <!--<b-card class="mt-3" header="Form Data Result">-->
@@ -107,7 +108,13 @@
                             this.$cookies.set("user_session", response.body.token);
                             this.$cookies.set("user_id", response.body.userId);
 
-                            this.$router.push("/");
+                            if (this.$cookies.isKey("previous_page")) {
+                                let previousPage = this.$cookies.get("previous_page");
+                                this.$cookies.remove("previous_page");
+                                this.$router.push(previousPage);
+                            } else {
+                                this.$router.push("/");
+                            }
                         }, function(error) {
                             alert(error.statusText);
                         });
@@ -117,6 +124,10 @@
                     }
                 }
             },
+
+            signUp: function () {
+                this.$router.push("/signup");
+            }
         }
     }
 </script>

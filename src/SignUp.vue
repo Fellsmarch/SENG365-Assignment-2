@@ -76,6 +76,7 @@
             </b-form-group>
 
             <b-button type="submit" variant="primary">Sign Up</b-button>
+            <b-button v-on:click="login">Login</b-button>
         </b-form>
 
         <!--<b-card class="mt-3" header="Form Data Result">-->
@@ -132,7 +133,16 @@
                                     this.$cookies.set("username", loginInfo.username);
                                     this.$cookies.set("user_session", loginResponse.body.token);
                                     this.$cookies.set("user_id", loginResponse.body.userId);
-                                    this.$router.push({ name: "home" });
+
+
+                                    if (this.$cookies.isKey("previous_page")) {
+                                        let previousPage = this.$cookies.get("previous_page");
+                                        this.$cookies.remove("previous_page");
+                                        this.$router.push(previousPage);
+                                    } else {
+                                        this.$router.push("/");
+                                    }
+
                                 }, function(loginError) {
                                     alert(loginError.statusText);
                                 });
@@ -141,6 +151,10 @@
                         });
                 }
             },
+
+            login: function() {
+                this.$router.push("/login");
+            }
         }
     }
 </script>

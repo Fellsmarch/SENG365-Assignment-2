@@ -18,7 +18,7 @@
                         <!--<span class="navbar-text">{{ this.username }}</span>-->
                     <!--</li>-->
                     <li class="b-nav-item">
-                        <a v-on:click="logOut" href="" class="nav-link">Logout</a>
+                        <a v-on:click="logOut" class="nav-link" style="cursor: pointer;">Logout</a>
                     </li>
                 </div>
 
@@ -59,6 +59,10 @@
             this.username = this.$cookies.get("username");
         },
 
+        mounted: function() {
+            this.$cookies.remove("previous_page");
+        },
+
         methods: {
             logOut() {
                 let config = {
@@ -72,8 +76,7 @@
                         this.$cookies.remove("user_session");
                         this.$cookies.remove("user_id");
                         this.$cookies.remove("username");
-                        this.$router.push("/");
-                        console.log(response);
+                        // this.$router.push("/");
                     }, function(error) {
                         if (error.status === 401) {
                             this.$cookies.remove("user_session");
