@@ -182,9 +182,9 @@
                     this.formattedDate = jsDate.toLocaleDateString('en-NZ', dateOptions);
 
                     let queryParameters = {
-                        city: this.venueData.city,
-                        adminId: this.venueData.admin.userId,
-                        q: this.venueData.venueName,
+                        city: '"' + this.venueData.city + '"',
+                        adminId: this.venueData.admin,
+                        q: '"' + this.venueData.venueName + '"',
                         categoryId: this.venueData.category.categoryId
                     };
 
@@ -193,7 +193,7 @@
                             let venues = venuesResponse.body;
                             for (let i = 0; i < venues.length; i++) {
                                 let venue = venues[i];
-                                if (venue.venueId.toString() == this.$route.params.venueId) {
+                                if (venue.venueId.toString() == this.$route.params.venueId) { //Double equals instead of triple is intentional
 
                                     if (!venue.meanStarRating) {
                                         this.meanStarRating = 3;

@@ -26,7 +26,7 @@
                 </b-col>
 
                 <b-col sm="8">
-                    <b-button v-on:click="newVenue" variant="primary">
+                    <b-button v-on:click="newVenueFunc" variant="primary">
                         Add Venue
                     </b-button>
                 </b-col>
@@ -72,8 +72,105 @@
             </b-table>
         </b-container>
 
-        <b-modal id="newVenueModal" title="Add New Venue">
-            <pre>Hello</pre>
+        <b-modal id="newVenueModal"
+                 ref="newVenueModal"
+                 title="Add New Venue"
+                 size="lg"
+                 centered
+                 @ok="handleOk"
+                 @show="resetModal"
+                 @hidden="resetModal">
+            <b-container fluid>
+                <b-form @submit.stop.prevent="handleSubmit" ref="newVenueForm">
+                    <b-form-group id="input-group-1" label-for="input-1" invalid-feedback="Venue name is required">
+                        <b-form-input
+                            id="input-1"
+                            v-model="newVenue.venueName"
+                            required
+                            :state="formState.venueName"
+                            placeholder="Venue Name"
+                        ></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group id="input-group-2" label-for="input-2" invalid-feedback="Category is required">
+                        <b-form-select v-model="newVenue.categoryId"
+                                       :options="categories"
+                                       :state="formState.category">
+                            <option slot="first" :value="null">--Select Category--</option>
+                        </b-form-select>
+                    </b-form-group>
+
+                    <b-form-group id="input-group-3" label-for="input-3" invalid-feedback="Short description is required">
+                        <b-form-input
+                            id="input-3"
+                            v-model="newVenue.shortDescription"
+                            required
+                            :state="formState.shortDescription"
+                            placeholder="Short Description"
+                        ></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group id="input-group-4" label-for="input-4" invalid-feedback="Long description is required">
+                        <b-form-input
+                            id="input-4"
+                            v-model="newVenue.longDescription"
+                            required
+                            :state="formState.longDescription"
+                            placeholder="Long Description"
+                        ></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group id="input-group-5" invalid-feedback="City is required">
+                        <b-form-input
+                            id="input-5"
+                            v-model="newVenue.city"
+                            required
+                            :state="formState.city"
+                            placeholder="City"
+                        ></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group id="input-group-6" invalid-feedback="Address is required">
+                        <b-form-input
+                            id="input-6"
+                            v-model="newVenue.address"
+                            required
+                            :state="formState.address"
+                            placeholder="Address"
+                        ></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group id="input-group-7" invalid-feedback="Latitude must be between -90 & 90">
+                        <b-form-input
+                            id="input-7"
+                            type="number"
+                            v-model="newVenue.latitude"
+                            required
+                            :state="formState.latitude"
+                            max="90"
+                            min="-90"
+                            placeholder="Latitude"
+                        ></b-form-input>
+                    </b-form-group>
+
+                    <b-form-group id="input-group-8" invalid-feedback="Latitude must be between -180 & 180">
+                        <b-form-input
+                            id="input-8"
+                            type="number"
+                            v-model="newVenue.longitude"
+                            required
+                            :state="formState.longitude"
+                            max="180"
+                            min="-180"
+                            placeholder="Longitude"
+                        ></b-form-input>
+                    </b-form-group>
+                </b-form>
+
+                <!--<b-card class="mt-3" header="Form Data Result">-->
+                    <!--<pre class="m-0">{{ newVenue }}</pre>-->
+                <!--</b-card>-->
+            </b-container>
         </b-modal>
 
     </div>
@@ -139,60 +236,83 @@
                 cities: [],
                 imageSize: {width: 75, height: 75},
                 defaultImage: require("./assets/default.png"),
+                newVenue: {
+                    venueName: null,
+                    categoryId: null,
+                    shortDescription: null,
+                    longDescription: null,
+                    city: null,
+                    address: null,
+                    latitude: null,
+                    longitude: null
+                },
+                formState: {
+                    venueName: null,
+                    category: null,
+                    shortDescription: null,
+                    longDescription: null,
+                    city: null,
+                    address: null,
+                    latitude: null,
+                    longitude: null
+                },
+                categories: [],
             }
-
         },
         mounted: function() {
-            this.$cookies.remove("previous_page");
-            let vueComp = this;
-            this.$http.get(url + "/venues")
-                .then(function(response) {
-                    let venues = response.body;
-                    let promises = [];
-
-                    for (let i = 0; i < venues.length; i++) {
-                        promises.push(this.$http.get(url + "/venues/" + venues[i].venueId));
-                    }
-
-                    Promise.all(promises).then(function(values) {
-                        let tempVenues = [];
-
-                        for (let i = 0; i < values.length; i++) {
-                            let toPush = values[i].body;
-
-                            vueComp.cities.push(toPush.city);
-
-                            if (venues[i].meanStarRating) {
-                                toPush.meanStarRating = venues[i].meanStarRating;
-                            } else {
-                                toPush.meanStarRating = 3;
-                            }
-
-                            if (venues[i].modeCostRating) {
-                                toPush.modeCostRating = venues[i].modeCostRating;
-                            } else {
-                                toPush.modeCostRating = 0;
-                            }
-
-                            toPush.venueId = venues[i].venueId;
-
-                            if (venues[i].primaryPhoto) {
-                                toPush.photoUrl = url + "/venues/" + venues[i].venueId + "/photos/" + venues[i].primaryPhoto;
-                            }
-
-                            tempVenues.push(toPush);
-                        }
-
-                        vueComp.items = tempVenues;
-                        vueComp.isBusy = false;
-                    }, function(errors) {
-                        console.log(errors);
-                    });
-                }, function(error) {
-                    alert(error.statusText);
-                });
+            this.init();
         },
         methods: {
+            init: function() {
+                this.$cookies.remove("previous_page");
+                let vueComp = this;
+                this.$http.get(url + "/venues")
+                    .then(function(response) {
+                        let venues = response.body;
+                        let promises = [];
+
+                        for (let i = 0; i < venues.length; i++) {
+                            promises.push(this.$http.get(url + "/venues/" + venues[i].venueId));
+                        }
+
+                        Promise.all(promises).then(function(values) {
+                            let tempVenues = [];
+
+                            for (let i = 0; i < values.length; i++) {
+                                let toPush = values[i].body;
+
+                                vueComp.cities.push(toPush.city);
+
+                                if (venues[i].meanStarRating) {
+                                    toPush.meanStarRating = venues[i].meanStarRating;
+                                } else {
+                                    toPush.meanStarRating = 3;
+                                }
+
+                                if (venues[i].modeCostRating) {
+                                    toPush.modeCostRating = venues[i].modeCostRating;
+                                } else {
+                                    toPush.modeCostRating = 0;
+                                }
+
+                                toPush.venueId = venues[i].venueId;
+
+                                if (venues[i].primaryPhoto) {
+                                    toPush.photoUrl = url + "/venues/" + venues[i].venueId + "/photos/" + venues[i].primaryPhoto;
+                                }
+
+                                tempVenues.push(toPush);
+                            }
+
+                            vueComp.items = tempVenues;
+                            vueComp.isBusy = false;
+                        }, function(errors) {
+                            console.log(errors);
+                        });
+                    }, function(error) {
+                        alert(error.statusText);
+                    });
+            },
             nameFilter: function(data, string) {
                 if (string === "Type to Search​") {
                     string = "";
@@ -208,15 +328,85 @@
                 }
             },
 
-            newVenue: function() {
+            newVenueFunc: function() {
                 if (!this.$cookies.isKey("user_session")) {
                     this.$cookies.set("previous_page", this.$router.currentRoute.fullPath + "/add");
                     this.$router.push("/login");
                 } else {
-                    this.$root.$emit('bv::show::modal', "newVenueModal");
-                }
-            }
+                    this.$http.get(url + "/categories")
+                        .then(function(response) {
+                            let categories = response.body;
 
+                            for (let i = 0; i < categories.length; i++) {
+                                let category = categories[i];
+                                this.categories.push({
+                                    value: category.categoryId,
+                                    text: category.categoryName
+                                });
+                            }
+                            this.$nextTick(() => {this.$refs.newVenueModal.show()});
+                            // this.$root.$emit('bv::show::modal', "newVenueModal");
+                        }, function(error) {
+                            alert("Error getting categories: " + error.statusText)
+                        });
+                }
+            },
+
+            handleSubmit() {
+                if (this.checkForm()) {
+                    this.newVenue.latitude = Number(this.newVenue.latitude);
+                    this.newVenue.longitude = Number(this.newVenue.longitude);
+
+                    this.$nextTick(() => {this.$refs.newVenueModal.hide()});
+
+                    let config = {
+                        headers: {
+                            "X-Authorization": this.$cookies.get("user_session")
+                        }
+                    };
+
+                    this.$http.post(url + "/venues", JSON.stringify(this.newVenue), config)
+                        .then(function(response) {
+                            alert("SUCCESS: Venue created");
+                            this.init();
+                        }, function(error) {
+                            if (error.status === 401) {
+                                this.$cookies.remove("user_session");
+                                this.$cookies.remove("user_id");
+                                this.$cookies.remove("username");
+                                alert("ERROR: You must be logged in to create a venue!");
+                            }
+                        });
+                }
+            },
+
+            handleOk(bvModalEvt) {
+                bvModalEvt.preventDefault();
+                this.handleSubmit();
+            },
+
+            checkForm() {
+                const valid = this.$refs.newVenueForm.checkValidity();
+                if (this.$refs.newVenueForm.checkValidity()) {
+                    Object.keys(this.formState).forEach(v => this.formState[v] = true);
+                } else {
+                    this.formState.venueName = !!this.newVenue.venueName;
+                    this.formState.shortDescription = !!this.newVenue.shortDescription;
+                    this.formState.longDescription = !!this.newVenue.longDescription;
+                    this.formState.city = !!this.newVenue.city;
+                    this.formState.address = !!this.newVenue.address;
+                    this.formState.latitude = (this.newVenue.latitude <= 90 && this.newVenue.latitude >= -90 && this.newVenue.latitude != null);
+                    this.formState.longitude = (this.newVenue.longitude <= 180 && this.newVenue.longitude >= -180 && this.newVenue.longitude != null);
+                    this.formState.category = !!this.newVenue.categoryId;
+                }
+
+                return valid && this.newVenue.categoryId != null;
+            },
+
+            resetModal() {
+                 Object.keys(this.newVenue).forEach(v => this.newVenue[v] = null);
+                 Object.keys(this.formState).forEach(v => this.formState[v] = null);
+            }
         }
     }
 </script>
