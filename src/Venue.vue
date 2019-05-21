@@ -3,7 +3,7 @@
         <b-container fluid>
             <b-row>
                 <!--Venue information and primary photo-->
-                <b-col sm="5">
+                <b-col sm="4">
                     <div id="loading" class="text-center" v-if="!loadingComplete">
                         <b-spinner class="align-middle "></b-spinner>
                         <strong>Loading...</strong>
@@ -97,9 +97,9 @@
                 </b-col>
 
                 <!--Venue photos and reviews-->
-                <b-col sm="7">
+                <b-col sm="8">
                     <b-row>
-                        <b-card header="Photos" border-variant="primary" header-bg-variant="primary" header-text-variant="white" style="min-width: 50rem">
+                        <b-card id="photos" header="Photos" border-variant="primary" header-bg-variant="primary" header-text-variant="white">
                             <div>
                                 <gallery :images="images" :index="index" @close="index = null"></gallery>
                                 <div
@@ -114,9 +114,27 @@
                     </b-row>
 
                     <b-row>
-                        <b-card header="Reviews" border-variant="primary" header-bg-variant="primary" header-text-variant="white">
-                            <pre>{{ venueData.photos }}</pre>
-                        </b-card>
+                        <!--<b-card header="Reviews" border-variant="primary" header-bg-variant="primary" header-text-variant="white">-->
+                            <b-table
+                                id="reviewsTable"
+                                striped
+                                hover
+                                :items="reviews"
+                                :fields="reviewFields"
+                                :busy="isBusy"
+                                outlined
+                                :sort-by.sync="dateTime">
+
+                                <template slot="starRating" slot-scope="row">
+                                    <star-rating :rating="row.item.starRating" :round-star-rating="false" :read-only="true" :star-size="15"></star-rating>
+                                </template>
+
+                                <div slot="table-busy" class="text-center text-danger my-2">
+                                    <b-spinner class="align-middle"></b-spinner>
+                                    <strong>Loading...</strong>
+                                </div>
+                            </b-table>
+                        <!--</b-card>-->
                     </b-row>
 
                 </b-col>
@@ -148,6 +166,46 @@
                 detailsShowing: false,
                 description: null,
                 showText: "More",
+                isBusy: true,
+                reviews: [],
+                reviewFields: {
+                    // reviewDetails: {
+                    //     label: "Review Details",
+                    //     sortable: false
+                    // },
+                    username: {
+                        label: "Reviewer",
+                        sortable: false
+                    },
+                    dateTime: {
+                        label: "Posted",
+                        sortable: true,
+                        formatter: value => {
+                            let dateOptions = { year: 'numeric', month: 'short', day: 'numeric'};
+                            return value.toLocaleTimeString('en-NZ', dateOptions);
+                        }
+                    },
+                    reviewBody: {
+                        label: "Review Text",
+                        sortable: false,
+                        class: "reviewBody"
+                    },
+                    starRating: {
+                        label: "Star Rating",
+                        sortable: true
+                    },
+                    costRating: {
+                        label: "Cost Rating",
+                        sortable: true,
+                        formatter: value => {
+                            if (value === 0) {
+                                return "Free";
+                            } else {
+                                return "$".repeat(value);
+                            }
+                        }
+                    },
+                },
             }
         },
 
@@ -176,8 +234,9 @@
                         this.description = this.venueData.shortDescription
                     }
 
-                    let dateParts = this.venueData.dateAdded.split("-");
-                    let jsDate = new Date(dateParts[0], dateParts[1] -1, dateParts[2].substr(0,2));
+                    console.log(this.venueData);
+                    // let dateParts = this.venueData.dateAdded.split("-");
+                    let jsDate = new Date(this.venueData.dateAdded);
                     let dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
                     this.formattedDate = jsDate.toLocaleDateString('en-NZ', dateOptions);
 
@@ -209,14 +268,22 @@
                                     break;
                                 }
                             }
+
+                            this.getReviews();
                         }, function(venuesError) {
-                            alert("Error getting venue ratings:\n" + venuesError.statusText);
+                            this.$bvToast.toast("Error getting venue ratings: " + venuesError.statusText, {
+                                title: "Error",
+                                autoHideDelay: 3000,
+                            });
                         });
                     this.loadingComplete = true;
 
 
                 }, function(error) {
-                    alert(error.statusText);
+                    this.$bvToast.toast("Error: " + error.statusText, {
+                        title: "Error",
+                        autoHideDelay: 3000,
+                    });
                 });
         },
 
@@ -236,7 +303,40 @@
                 }
 
                 this.detailsShowing = !this.detailsShowing
-            }
+            },
+
+            getReviews: function() {
+                this.$http.get(url + "/venues/" + this.$route.params.venueId + "/reviews")
+                    .then(function (response) {
+                        let reviews = response.body;
+
+                        for (let i = 0; i < reviews.length; i++) {
+                            let review = reviews[i];
+
+                            // let dateParts = review.timePosted.split("-");
+                            // let jsDate = new Date(dateParts[0], dateParts[1] -1, dateParts[2].substr(0,2));
+                            // let dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
+                            // let dateTime = jsDate.toLocaleTimeString('en-NZ', dateOptions);
+
+                            let jsDate = new Date(review.timePosted);
+
+                            this.reviews.push({
+                                username: review.reviewAuthor.username,
+                                reviewBody: review.reviewBody,
+                                starRating: review.starRating,
+                                costRating: review.costRating,
+                                dateTime: jsDate
+                            });
+                        }
+
+                        this.isBusy = false;
+                    }, function (error) {
+                        this.$bvToast.toast("Error getting reviews: " + error.statusText, {
+                            title: "Error",
+                            autoHideDelay: 3000,
+                        });
+                    });
+            },
         }
     }
 </script>
@@ -282,4 +382,11 @@
 
     }
 
+    #reviewsTable {
+        margin-right: 2rem;
+    }
+
+    #photos {
+        min-width: Calc(100% - 2rem);
+    }
 </style>

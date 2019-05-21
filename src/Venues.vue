@@ -49,14 +49,6 @@
                 <b-col md="2" class="my-1">
                     <b-form-group label="Min Star Rating:">
                         <star-rating v-model="selectedStarRating" :round-star-rating="false" :star-size="25" style="font-size: 1rem;" @rating-selected="getVenues"></star-rating>
-                        <!--<b-form-select v-model="selectedStarRating" v-on:change="getVenues">-->
-                            <!--<option slot="first" :value="null">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
-                            <!--<option :value="1"><star-rating :rating="1" :read-only="true" :star-size="25" style="font-size: 1.25rem;"></star-rating></option>-->
-                            <!--<option :value="2">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
-                            <!--<option :value="3">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
-                            <!--<option :value="4">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
-                            <!--<option :value="5">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
-                        <!--</b-form-select>-->
                     </b-form-group>
                 </b-col>
 
