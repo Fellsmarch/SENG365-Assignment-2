@@ -6,6 +6,7 @@ import SignUp from "./SignUp.vue";
 import Login from "./Login.vue";
 import Venue from "./Venue.vue";
 import User from "./User.vue";
+import Users from "./Users.vue";
 
 import VueRouter from 'vue-router';
 import VueResource from 'vue-resource';
@@ -60,6 +61,12 @@ const routes = [
         path: "/user/:userId",
         name: "user",
         component: User
+    },
+
+    {
+        path: "/users",
+        name: "users",
+        component: Users
     },
 
     {
