@@ -318,10 +318,10 @@
                     this.$http.get(url + "/venues", {params: queryParams})
                         .then(function(response) {
                             this.items = response.body;
-                            this.isBusy = false;
-
+                            this.updateItems();
                             this.getCategories();
                             this.distancePresent = true;
+                            this.isBusy = false;
                         }, function(error) {
                             this.$bvToast.toast("Error: " + error.statusText, {
                                 title: "Error",
@@ -332,10 +332,10 @@
                     this.$http.get(url + "/venues", {params: queryParams})
                         .then(function(response) {
                             this.items = response.body;
-                            this.isBusy = false;
-
+                            this.updateItems();
                             this.getCategories();
                             this.distancePresent = false;
+                            this.isBusy = false;
                         }, function(error) {
                             this.$bvToast.toast("Error: " + error.statusText, {
                                 title: "Error",
@@ -380,7 +380,26 @@
                         });
                     }
                 }
+
+
+
                 return queryParams;
+            },
+
+            updateItems: function() {
+                for (let i = 0; i < this.items.length; i++) {
+                    if (!this.items[i].meanStarRating) {
+                        this.items[i].meanStarRating = 3;
+                    }
+
+                    if (!this.items[i].modeCostRating) {
+                        this.items[i].modeCostRating = 0;
+                    }
+
+                    if (this.items[i].primaryPhoto) {
+                        this.items[i].photoUrl = url + "/venues/" + this.items[i].venueId + "/photos/" + this.items[i].primaryPhoto;
+                    }
+                }
             },
 
             getCategories: function() {
