@@ -46,23 +46,25 @@
                 </b-col>
 
                 <!--Min Star Rating-->
-                <b-col md="2" class="my-1">
+                <b-col md="1" class="my-1">
                     <b-form-group label="Min Star Rating:">
                         <star-rating v-model="selectedStarRating" :round-star-rating="false" :star-size="25" style="font-size: 1rem;" @rating-selected="getVenues"></star-rating>
                     </b-form-group>
                 </b-col>
 
-                <b-col class="buttons">
-                    <b-button v-on:click="clearFilters">
-                        Clear Filters
-                    </b-button>
+                <b-col id="adminToggle" class="buttons">
+                    <b-button v-on:click="getVenues" variant="primary" :pressed.sync="adminToggle">My Venues</b-button>
+                    <b-button v-on:click="clearFilters" variant="primary">Clear Filters</b-button>
+                    <b-button v-on:click="newVenueFunc" variant="primary">Add Venue</b-button>
                 </b-col>
 
-                <b-col class="buttons">
-                    <b-button v-on:click="newVenueFunc" variant="primary">
-                        Add Venue
-                    </b-button>
-                </b-col>
+                <!--<b-col class="buttons">-->
+                    <!---->
+                <!--</b-col>-->
+
+                <!--<b-col class="buttons">-->
+                    <!---->
+                <!--</b-col>-->
             </b-row>
 
             <b-table
@@ -323,6 +325,7 @@
                     {value: 1, text: "$"},
                     {value: 0, text: "Free"}
                 ],
+                adminToggle: false,
             }
         },
         mounted: function() {
@@ -411,6 +414,18 @@
                     queryParams.minStarRating = this.selectedStarRating;
                 }
 
+                if (this.adminToggle) {
+                    if (this.$cookies.isKey("user_id")) {
+                        queryParams.adminId = this.$cookies.get("user_id");
+                    } else {
+                        this.$bvToast.toast("You are not logged in properly, please try logging out and logging back in!", {
+                            title: "Not Logged In",
+                            autoHideDelay: 3000,
+                        });
+                    }
+
+                }
+
                 return queryParams;
             },
 
@@ -443,6 +458,7 @@
                 this.selectedCategoryId = null;
                 this.selectedCost = null;
                 this.selectedStarRating = null;
+                this.adminToggle = false;
                 this.getVenues();
             },
 
@@ -526,5 +542,10 @@
     .buttons {
         padding-top: 0.885rem;
         margin: auto;
+        padding-left: 5rem;
+    }
+
+    #adminToggle {
+        min-width: 8rem;
     }
 </style>

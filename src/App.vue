@@ -129,6 +129,7 @@
     a {
       color: #42b983;
     }
+
     .reviewBody {
         min-width: 20rem;
     }
