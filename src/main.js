@@ -5,6 +5,7 @@ import Venues from "./Venues.vue";
 import SignUp from "./SignUp.vue";
 import Login from "./Login.vue";
 import Venue from "./Venue.vue";
+import User from "./User.vue";
 
 import VueRouter from 'vue-router';
 import VueResource from 'vue-resource';
@@ -53,6 +54,12 @@ const routes = [
         path: "/login",
         name: "login",
         component: Login
+    },
+
+    {
+        path: "/user/:userId",
+        name: "user",
+        component: User
     },
 
     {

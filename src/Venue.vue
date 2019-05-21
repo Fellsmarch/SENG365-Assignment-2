@@ -136,7 +136,7 @@
             return {
                 imageSize: {width: 200, height: 200},
                 defaultImage: require("./assets/default.png"),
-                venueData: null,
+                venueData: {photos: null, },
                 primaryPhoto: null,
                 loadingComplete: false,
                 primaryPhotoUrl: null,
@@ -182,9 +182,9 @@
                     this.formattedDate = jsDate.toLocaleDateString('en-NZ', dateOptions);
 
                     let queryParameters = {
-                        city: '"' + this.venueData.city + '"',
-                        adminId: this.venueData.admin,
-                        q: '"' + this.venueData.venueName + '"',
+                        // city: this.venueData.city,
+                        adminId: this.venueData.admin.userId,
+                        q: this.venueData.venueName,
                         categoryId: this.venueData.category.categoryId
                     };
 
@@ -193,7 +193,7 @@
                             let venues = venuesResponse.body;
                             for (let i = 0; i < venues.length; i++) {
                                 let venue = venues[i];
-                                if (venue.venueId.toString() == this.$route.params.venueId) { //Double equals instead of triple is intentional
+                                if (venue.venueId.toString() == this.$route.params.venueId) { //Double equals instead of triple is intentional as I don't care about type conversion
 
                                     if (!venue.meanStarRating) {
                                         this.meanStarRating = 3;
@@ -208,10 +208,7 @@
                                     }
                                     break;
                                 }
-
-
                             }
-
                         }, function(venuesError) {
                             alert("Error getting venue ratings:\n" + venuesError.statusText);
                         });
@@ -224,10 +221,6 @@
         },
 
         methods: {
-            toggleDetails: function() {
-                this.detailsShowing = !this.detailsShowing;
-            },
-
             showMore: function() {
                 if (this.detailsShowing) {
                     if (this.venueData.longDescription) {

@@ -10,13 +10,11 @@
             </b-navbar-nav>
             <b-navbar-nav class="ml-auto">
                 <div v-if="isAuth()">
-                    <b-nav-text>
-                        {{ this.username }}
-                    </b-nav-text>
-                    <!--<b-nav-item v-on:click="logOut">Log Out</b-nav-item>-->
-                    <!--<li class="b-nav-item">-->
-                        <!--<span class="navbar-text">{{ this.username }}</span>-->
-                    <!--</li>-->
+                    <b-nav-item :to="{ name: 'user', params: { userId: this.$cookies.get('user_id') } }">{{ this.username }}</b-nav-item>
+                    <!--<a class="nav-link"-->
+                       <!--style="cursor: pointer;"-->
+                       <!--:to="{ name: 'user', params: { userID: this.$cookies.get('user_id') } }"-->
+                    <!--&gt;{{ this.username }}</a>-->
                     <li class="b-nav-item">
                         <a v-on:click="logOut" class="nav-link" style="cursor: pointer;">Logout</a>
                     </li>
@@ -95,9 +93,8 @@
             signUp: function() {
                 this.$cookies.set("previous_page", this.$router.currentRoute.fullPath);
                 this.$router.push("/signup");
-            }
+            },
         },
-
     }
 </script>
 
