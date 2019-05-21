@@ -93,7 +93,9 @@
                         <b-row align-v="center">
                             <b-col sm="4">
                                 <b-button id="editButton" v-if="userIsAdmin" variant="primary" v-on:click="editVenue">Edit</b-button>
+                                <b-button id="writeReview" v-if="!userIsAdmin" variant="primary" v-on:click="showReviewModal">Write Review</b-button>
                             </b-col>
+
                         </b-row>
                     </div>
 
@@ -247,6 +249,45 @@
                 <!--</b-card>-->
             </b-container>
         </b-modal>
+
+        <b-modal id="writeReviewModal"
+                 ref="writeReviewModal"
+                 title="Write Review"
+                 size="lg"
+                 centered
+                 @show="resetReviewModal"
+                 @hidden="resetReviewModal">
+
+            <b-form-group invalid-feedback="Review text is required">
+                <b-form-textarea
+                    v-model="reviewForm.reviewBody"
+                    required
+                    :state="reviewFormState.reviewBody"
+                    placeholder="Review text"
+                ></b-form-textarea>
+            </b-form-group>
+
+            <b-form-group invalid-feedback="Cost rating is required">
+                <b-form-select v-model="reviewForm.costRating"
+                               :options="costOptions"
+                               :state="reviewFormState.costRating">
+                    <option slot="first" :value="null">--Select Cost Rating--</option>
+                </b-form-select>
+            </b-form-group>
+
+            <div>
+                Enter star rating: <star-rating v-model="reviewForm.starRating" :star-size="40" style="font-size: 1rem;"></star-rating>
+            </div>
+
+
+            <template slot="modal-footer">
+                <div v-if="reviewFormErrorPresent" class="text-danger">
+                    {{ reviewFormError }}
+                </div>
+                <b-button v-on:click="closeReviewModal">Cancel</b-button>
+                <b-button variant="primary" v-on:click="createReview">Submit</b-button>
+            </template>
+        </b-modal>
     </div>
 </template>
 
@@ -322,6 +363,24 @@
                 },
                 venueDataCopy: {},
                 changesMade: false,
+                reviewForm: {
+                    reviewBody: "",
+                    costRating: null,
+                    starRating: null
+                },
+                reviewFormState: {
+                    reviewBody: null,
+                    costRating: null,
+                },
+                costOptions: [
+                    {value: 4, text: "$$$$"},
+                    {value: 3, text: "$$$"},
+                    {value: 2, text: "$$"},
+                    {value: 1, text: "$"},
+                    {value: 0, text: "Free"}
+                ],
+                reviewFormError: "",
+                reviewFormErrorPresent: false,
             }
         },
 
@@ -567,6 +626,81 @@
                     this.venueData = JSON.parse(this.venueDataCopy);
                 }
                 Object.keys(this.formState).forEach(v => this.formState[v] = null);
+            },
+
+            showReviewModal() {
+                this.$nextTick(() => {this.$refs.writeReviewModal.show()});
+            },
+            closeReviewModal() {
+                this.$nextTick(() => {this.$refs.writeReviewModal.hide()});
+            },
+            resetReviewModal() {
+                Object.keys(this.reviewFormState).forEach(v => this.reviewFormState[v] = null);
+                Object.keys(this.reviewForm).forEach(v => this.reviewForm[v] = null);
+            },
+            createReview() {
+                this.reviewFormState.reviewBody = !!this.reviewForm.reviewBody;
+
+                if (!this.reviewForm.costRating) {
+                    this.reviewFormState.costRating = this.reviewForm.costRating === 0;
+                } else {
+                    this.reviewFormState.costRating = true
+                }
+
+                if (this.reviewForm.starRating) {
+                    if (this.reviewFormState.reviewBody && this.reviewFormState.costRating) {
+                        this.reviewFormErrorPresent = false;
+
+                        let config = {
+                            headers: {
+                                "X-Authorization": this.$cookies.get("user_session")
+                            }
+                        };
+
+                        let vueComp = this;
+
+                        this.$http.post(url + "/venues/" + this.$route.params.venueId + "/reviews", JSON.stringify(this.reviewForm), config)
+                            .then(function(response) {
+                                this.$bvToast.toast("Review successfully posted!", {
+                                    title: "Success",
+                                    autoHideDelay: 3000,
+                                });
+                                vueComp.closeReviewModal();
+                                vueComp.getReviews();
+                            }, function(error) {
+                                vueComp.closeReviewModal();
+                                if (error.status === 401) {
+                                    this.$cookies.remove("user_session");
+                                    this.$cookies.remove("user_id");
+                                    this.$cookies.remove("username");
+                                    alert("ERROR: You must be logged in post a review!");
+                                } else if (error.status === 403) {
+                                    this.$bvToast.toast("You have already posted a review for this venue!", {
+                                        title: "Error",
+                                        autoHideDelay: 3000,
+                                    });
+                                } else if (error.status === 404) {
+                                    this.$bvToast.toast("Venue not found! Has it been deleted?", {
+                                        title: "Error",
+                                        autoHideDelay: 3000,
+                                    });
+                                } else if (error.status === 400) {
+                                    this.$bvToast.toast("Bad form data, please try again with valid changes", {
+                                        title: "Error",
+                                        autoHideDelay: 3000,
+                                    });
+                                } else {
+                                    this.$bvToast.toast("Error creating venue: " + error.statusText, {
+                                        title: "Error",
+                                        autoHideDelay: 3000,
+                                    });
+                                }
+                            });
+                    }
+                } else {
+                    this.reviewFormError = "Please enter a star rating";
+                    this.reviewFormErrorPresent = true;
+                }
             }
         }
     }
