@@ -481,6 +481,11 @@
                                 this.$cookies.remove("user_id");
                                 this.$cookies.remove("username");
                                 alert("ERROR: You must be logged in to create a venue!");
+                            } else {
+                                this.$bvToast.toast("Error creating venue: " + error.statusText, {
+                                    title: "Error",
+                                    autoHideDelay: 3000,
+                                });
                             }
                         });
                 }
