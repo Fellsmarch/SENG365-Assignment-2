@@ -4,10 +4,21 @@
             <b-row>
                 <!--City filter dropdown-->
                 <b-col md="2" class="my-1">
-                    <b-form-group label-cols-sm="4" label="Select City:" class="mb-1">
+                    <b-form-group label="Select City:">
                         <b-input-group>
-                            <b-form-select v-model="selectedCity" :options="cityOptions" v-on:change="filter = 'Type to Search​'">
+                            <b-form-select v-model="selectedCity" :options="cityOptions" v-on:change="getVenues">
                                 <option slot="first" :value="null">--Select City--</option>
+                            </b-form-select>
+                        </b-input-group>
+                    </b-form-group>
+                </b-col>
+
+                <!--Categories filter dropdown-->
+                <b-col md="2" class="my-1">
+                    <b-form-group label="Select Category:">
+                        <b-input-group>
+                            <b-form-select v-model="selectedCategoryId" :options="categories" v-on:change="getVenues">
+                                <option slot="first" :value="null">--Select Category--</option>
                             </b-form-select>
                         </b-input-group>
                     </b-form-group>
@@ -15,35 +26,64 @@
 
                 <!--Filter bar-->
                 <b-col md="2" class="my-1">
-                    <b-form-group label-cols-sm="2" label="Filter:" class="mb-1">
+                    <b-form-group label="Filter:">
                         <b-input-group>
-                            <b-form-input v-model="filter" placeholder="Type to Search​" v-on:click="filter = ''"></b-form-input>
-                            <!--<b-input-group-append>-->
-                                <!--<b-button :disabled="!filter" @click="filter = ''">Clear</b-button>-->
-                            <!--</b-input-group-append>-->
+                            <b-form-input v-model="filter" placeholder="Type to Search​" v-on:click="filter = ''" v-on:input="getVenues"></b-form-input>
+                            <b-input-group-append>
+                                <b-button :disabled="!filter" @click="filter = ''" v-on:click="getVenues">Clear</b-button>
+                            </b-input-group-append>
                         </b-input-group>
                     </b-form-group>
                 </b-col>
 
-                <b-col sm="8">
+                <!--Max Cost Rating-->
+                <b-col md="2" class="my-1">
+                    <b-form-group label="Max Cost Rating:">
+                        <b-form-select v-model="selectedCost" :options="costOptions" v-on:change="getVenues">
+                            <option slot="first" :value="null">--Select Max Cost--</option>
+                        </b-form-select>
+                    </b-form-group>
+                </b-col>
+
+                <!--Min Star Rating-->
+                <b-col md="2" class="my-1">
+                    <b-form-group label="Min Star Rating:">
+                        <star-rating v-model="selectedStarRating" :round-star-rating="false" :star-size="25" style="font-size: 1rem;" @rating-selected="getVenues"></star-rating>
+                        <!--<b-form-select v-model="selectedStarRating" v-on:change="getVenues">-->
+                            <!--<option slot="first" :value="null">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
+                            <!--<option :value="1"><star-rating :rating="1" :read-only="true" :star-size="25" style="font-size: 1.25rem;"></star-rating></option>-->
+                            <!--<option :value="2">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
+                            <!--<option :value="3">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
+                            <!--<option :value="4">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
+                            <!--<option :value="5">&#45;&#45;Select Min Star Rating&#45;&#45;</option>-->
+                        <!--</b-form-select>-->
+                    </b-form-group>
+                </b-col>
+
+                <b-col class="buttons">
+                    <b-button v-on:click="clearFilters">
+                        Clear Filters
+                    </b-button>
+                </b-col>
+
+                <b-col class="buttons">
                     <b-button v-on:click="newVenueFunc" variant="primary">
                         Add Venue
                     </b-button>
                 </b-col>
             </b-row>
 
-
-
-
             <b-table
+                id="venuesTable"
                 striped
                 hover
                 :items="items"
                 :fields="fields"
                 :busy="isBusy"
                 outlined
-                :filter="filter"
-                :filter-function="nameFilter">
+                :per-page="perPage"
+                :current-page="currentPage"
+                :sort-by.sync="meanStarRating">
 
                 <template slot="details" slot-scope="row">
                     <b-button size="sm" class="mr-1">
@@ -70,6 +110,15 @@
                     <strong>Loading...</strong>
                 </div>
             </b-table>
+
+            <p class="mt-3">Current Index: {{ currentIndex }}</p>
+
+            <b-pagination
+                v-model="currentPage"
+                :total-rows="totalRows"
+                :per-page="perPage"
+                aria-controls="venuesTable">
+            </b-pagination>
         </b-container>
 
         <b-modal id="newVenueModal"
@@ -183,7 +232,20 @@
         computed: {
             cityOptions() {
                 return [...new Set(this.cities)].sort();
+            },
+            totalRows() {
+                return this.items.length;
+            },
+            currentIndex() {
+                let firstIndex = (this.currentPage - 1) * this.perPage + 1;
+                let secondIndex = this.currentPage * this.perPage;
+
+                if (secondIndex > this.items.length) {
+                    secondIndex = (this.currentPage - 1) * this.perPage + (this.items.length % this.perPage);
+                }
+                return "" + firstIndex + "-" + secondIndex;
             }
+
         },
         data() {
             return {
@@ -231,8 +293,11 @@
                 },
                 items: [],
                 isBusy: true,
-                filter: "Type to Search​",
+                filter: "",
                 selectedCity: null,
+                selectedCategoryId: null,
+                selectedCost: null,
+                selectedStarRating: null,
                 cities: [],
                 imageSize: {width: 75, height: 75},
                 defaultImage: require("./assets/default.png"),
@@ -257,18 +322,32 @@
                     longitude: null
                 },
                 categories: [],
+                currentPage: 1,
+                perPage: 10,
+                costOptions: [
+                    {value: 4, text: "$$$$"},
+                    {value: 3, text: "$$$"},
+                    {value: 2, text: "$$"},
+                    {value: 1, text: "$"},
+                    {value: 0, text: "Free"}
+                ],
             }
         },
         mounted: function() {
-            this.init();
+            this.$cookies.remove("previous_page");
+            this.getVenues();
+            this.getCategories();
         },
         methods: {
-            init: function() {
-                this.$cookies.remove("previous_page");
+            getVenues: function() {
                 let vueComp = this;
-                this.$http.get(url + "/venues")
+
+                let queryParams = this.getQueryParams();
+
+                this.$http.get(url + "/venues", {params: queryParams})
                     .then(function(response) {
                         let venues = response.body;
+                        console.log(venues);
                         let promises = [];
 
                         for (let i = 0; i < venues.length; i++) {
@@ -310,22 +389,69 @@
                             console.log(errors);
                         });
                     }, function(error) {
-                        alert(error.statusText);
+                        this.$bvToast.toast("Error: " + error.statusText, {
+                            title: "Error",
+                            autoHideDelay: 3000,
+                        });
                     });
             },
-            nameFilter: function(data, string) {
-                if (string === "Type to Search​") {
-                    string = "";
+
+            getQueryParams: function() {
+                let queryParams = {};
+
+                if (this.filter) {
+                    queryParams.q = this.filter;
                 }
-                if (this.selectedCity != null) {
-                    if (this.filter == null || this.filter === '') {
-                        return data.city === this.selectedCity;
-                    } else {
-                        return data.city === this.selectedCity && data.venueName.includes(string);
-                    }
-                } else {
-                    return data.venueName.includes(string);
+
+                if (this.selectedCity) {
+                    queryParams.city = this.selectedCity;
                 }
+
+                if (this.selectedCategoryId) {
+                    queryParams.categoryId = this.selectedCategoryId;
+                }
+
+                if (this.selectedCost || this.selectedCost === 0) {
+                    queryParams.maxCostRating = this.selectedCost;
+                }
+
+                if (this.selectedStarRating) {
+                    queryParams.minStarRating = this.selectedStarRating;
+                }
+
+                return queryParams;
+            },
+
+            getCategories: function() {
+                this.$http.get(url + "/categories")
+                    .then(function(response) {
+                        let body = response.body;
+                        let categories = [];
+
+                        for (let i = 0; i < body.length; i++) {
+                            let category = body[i];
+                            categories.push({
+                                value: category.categoryId,
+                                text: category.categoryName
+                            });
+                        }
+
+                        this.categories = categories;
+                    }, function(error) {
+                        this.$bvToast.toast("Error getting categories: " + error.statusText, {
+                            title: "Error getting categories",
+                            autoHideDelay: 3000,
+                        });
+                    });
+            },
+
+            clearFilters: function() {
+                this.filter = null;
+                this.selectedCity = null;
+                this.selectedCategoryId = null;
+                this.selectedCost = null;
+                this.selectedStarRating = null;
+                this.getVenues();
             },
 
             newVenueFunc: function() {
@@ -333,22 +459,7 @@
                     this.$cookies.set("previous_page", this.$router.currentRoute.fullPath + "/add");
                     this.$router.push("/login");
                 } else {
-                    this.$http.get(url + "/categories")
-                        .then(function(response) {
-                            let categories = response.body;
-
-                            for (let i = 0; i < categories.length; i++) {
-                                let category = categories[i];
-                                this.categories.push({
-                                    value: category.categoryId,
-                                    text: category.categoryName
-                                });
-                            }
-                            this.$nextTick(() => {this.$refs.newVenueModal.show()});
-                            // this.$root.$emit('bv::show::modal', "newVenueModal");
-                        }, function(error) {
-                            alert("Error getting categories: " + error.statusText)
-                        });
+                    this.$nextTick(() => {this.$refs.newVenueModal.show()});
                 }
             },
 
@@ -367,8 +478,11 @@
 
                     this.$http.post(url + "/venues", JSON.stringify(this.newVenue), config)
                         .then(function(response) {
-                            alert("SUCCESS: Venue created");
-                            this.init();
+                            this.$bvToast.toast("Venue created!", {
+                                title: "SUCCESS",
+                                autoHideDelay: 3000,
+                            });
+                            this.getVenues();
                         }, function(error) {
                             if (error.status === 401) {
                                 this.$cookies.remove("user_session");
@@ -410,3 +524,10 @@
         }
     }
 </script>
+
+<style scoped>
+    .buttons {
+        padding-top: 0.885rem;
+        margin: auto;
+    }
+</style>
