@@ -308,8 +308,6 @@
         },
         methods: {
             getVenues: function() {
-                let vueComp = this;
-
                 let queryParams = this.getQueryParams();
 
                 this.$getLocation().then(coordinates => {
@@ -382,9 +380,6 @@
                         });
                     }
                 }
-
-
-
                 return queryParams;
             },
 
@@ -511,105 +506,6 @@
             }
         }
     }
-    // let promises = [];
-    //
-    // for (let i = 0; i < venues.length; i++) {
-    //     promises.push(this.$http.get(url + "/venues/" + venues[i].venueId));
-    // }
-    //
-    // Promise.all(promises).then(function(values) {
-    //     let tempVenues = [];
-    //
-    //     for (let i = 0; i < values.length; i++) {
-    //         let toPush = values[i].body;
-    //
-    //         vueComp.cities.push(toPush.city);
-    //
-    //         if (venues[i].meanStarRating) {
-    //             toPush.meanStarRating = venues[i].meanStarRating;
-    //         } else {
-    //             toPush.meanStarRating = 3;
-    //         }
-    //
-    //         if (venues[i].modeCostRating) {
-    //             toPush.modeCostRating = venues[i].modeCostRating;
-    //         } else {
-    //             toPush.modeCostRating = 0;
-    //         }
-    //
-    //         toPush.venueId = venues[i].venueId;
-    //
-    //         if (venues[i].primaryPhoto) {
-    //             toPush.photoUrl = url + "/venues/" + venues[i].venueId + "/photos/" + venues[i].primaryPhoto;
-    //         }
-    //
-    //         if (venues[i].distance) {
-    //             toPush.distance = venues[i].distance;
-    //             vueComp.fields.distance = {
-    //                 label: "Distance",
-    //                 sortable: true,
-    //                 formatter: value => {
-    //                     return String.format("%.02f", value) + "km";
-    //                 }
-    //             }
-    //         } else {
-    //             toPush.distance = null;
-    //         }
-    //
-    //         tempVenues.push(toPush);
-    //     }
-    //
-    //     vueComp.items = tempVenues;
-    //     vueComp.isBusy = false;
-    // }, function(errors) {
-    //     this.$bvToast.toast("Errors: " + errors.statusText, {
-    //         title: "Error",
-    //         autoHideDelay: 3000,
-    //     });
-    // });
-
-    // fields: {
-    //     venueName: {
-    //         label: "Name",
-    //         sortable: true
-    //     },
-    //     categoryName: {
-    //         label: "Category",
-    //         sortable: true,
-    //         key: "categoryName"
-    //     },
-    //     city: {
-    //         label: "City",
-    //         sortable: true,
-    //     },
-    //     shortDescription: {
-    //         label: "Description",
-    //         sortable: false
-    //     },
-    //     meanStarRating: {
-    //         label: "Star Rating",
-    //         sortable: true
-    //     },
-    //     modeCostRating: {
-    //         label: "Cost",
-    //         sortable: true,
-    //         formatter: value => {
-    //             if (value === 0) {
-    //                 return "Free";
-    //             } else {
-    //                 return "$".repeat(value);
-    //             }
-    //         }
-    //     },
-    //     primaryPhoto: {
-    //         label: "Photo",
-    //         sortable: false
-    //     },
-    //     details: {
-    //         label: "Details",
-    //         sortable: false
-    //     }
-    // },
 </script>
 
 <style scoped>
