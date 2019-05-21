@@ -1,35 +1,58 @@
 <template>
     <div>
         <b-container>
-
                 <div class="text-center" v-if="loading">
                     <b-spinner class="align-middle"></b-spinner>
                     <strong>Loading...</strong>
                 </div>
                 <div v-if="!loading">
-                    <b-row align-v="center">
-                        <h3><strong>Username:</strong> {{ username }}</h3>
-                    </b-row>
-                    <b-row align-v="center">
-                        <h3><strong>Given Name:</strong> {{ givenName }}</h3>
-                    </b-row>
-                    <b-row align-v="center">
-                        <h3><strong>Family Name:</strong> {{ familyName }}</h3>
-                    </b-row>
-                    <b-row align-v="center">
-                        <h3 v-if="authorised"><strong>Email:</strong> {{ email }}</h3>
-                    </b-row>
-                    <b-row>
-                        <b-button v-if="authorised" v-on:click="editUser" variant="primary">
-                            Edit
-                        </b-button>
-                    </b-row>
+                    <div style="width: 100%;">
+                        <div>
+                            <b-img class="imgClass" :src="userImage" onerror="this.src='/src/assets/default.png'" fluid v-bind="imageSize"></b-img>
+                        </div>
+                        <!--<div v-if="userImage">-->
+                            <!--<b-img class="imgClass" :src="url + '/users/' + this.$route.params.userId + '/photo'" fluid></b-img>-->
+                        <!--</div>-->
+                        <!--<div v-else>-->
+                            <!--<b-img class="imgClass" src="/src/assets/default.png" fluid></b-img>-->
+                        <!--</div>-->
+                    </div>
+                    <div style="width: 100%; text-align: center;">
+                        <b-button v-if="authorised" v-on:click="showUploadModal" variant="primary">Upload Photo</b-button>
+                        <b-button v-if="authorised" v-on:click="deletePhoto" variant="danger">Delete Photo</b-button>
+                    </div>
+                    <h3><strong>Username:</strong> {{ username }}</h3>
+                    <h3><strong>Given Name:</strong> {{ givenName }}</h3>
+                    <h3><strong>Family Name:</strong> {{ familyName }}</h3>
+                    <h3 v-if="authorised"><strong>Email:</strong> {{ email }}</h3>
+                    <div style="width: 100%; text-align:center;">
+                        <b-button v-if="authorised" v-on:click="editUser" variant="primary">Edit Profile</b-button>
+                    </div>
                 </div>
-
-
-
-
         </b-container>
+
+        <b-modal id="uploadPhotoModal"
+                 ref="uploadPhotoModal"
+                 title="Upload Photo"
+                 size="lg"
+                 centered>
+
+            <b-form-file v-model="newPhoto"
+                         :state="newPhoto ? true : null"
+                         placeholder="Choose an image..."
+                         drop-placeholder="Drop image here..."
+                         v-on:change="selectFileErrorPresent = false"
+                         accept="image/jpeg, image/png, image/jpg">
+            </b-form-file>
+
+            <template slot="modal-footer">
+                <div v-if="selectFileErrorPresent" class="text-danger">
+                    {{ selectFileError }}
+                </div>
+                <b-button v-on:click="closeUploadModal">Cancel</b-button>
+                <b-button variant="primary" v-on:click="uploadPhoto">Upload</b-button>
+            </template>
+        </b-modal>
 
         <b-modal id="editUserModal"
                  ref="editUserModal"
@@ -128,6 +151,11 @@
                 currentPassword: null,
                 newGivenName: null,
                 newFamilyName: null,
+                userImage: null,
+                imageSize: {width: 200, height: 200},
+                newPhoto: null,
+                selectFileError: "",
+                selectFileErrorPresent: false,
             }
         },
         mounted: function() {
@@ -146,14 +174,16 @@
                     config.headers = null;
                 }
 
-                this.$http.get(url + /users/ + this.$route.params.userId, config)
+                this.$http.get(url + "/users/" + this.$route.params.userId, config)
                     .then(function(response) {
                         this.username = response.body.username;
                         this.givenName = response.body.givenName;
                         this.familyName = response.body.familyName;
                         this.email = response.body.email ? response.body.email : null;
-                        this.loading = false;
                         this.authorised = !!response.body.email;
+                        this.userImage = url + "/users/" + this.$route.params.userId + "/photo";
+
+                        this.loading = false;
                     }, function(error) {
                         this.$bvToast.toast(error.statusText, {
                             title: "Error getting user data",
@@ -249,6 +279,121 @@
 
             editUser() {
                 this.$nextTick(() => {this.$refs.editUserModal.show()});
+            },
+            showUploadModal() {
+                this.$nextTick(() => {this.$refs.uploadPhotoModal.show()});
+            },
+            closeUploadModal() {
+                this.$nextTick(() => {this.$refs.uploadPhotoModal.hide()});
+            },
+            uploadPhoto() {
+                if (this.newPhoto) {
+                    if (this.newPhoto.size <= 20000000) {
+                        let config = {
+                            emulateJSON: false,
+                            headers: {
+                                "X-Authorization": this.$cookies.get("user_session"),
+                                "Content-Type": this.newPhoto.type
+                            },
+                        };
+
+                        this.loading = true;
+
+                        this.$http.put(url + "/users/" + this.$route.params.userId + "/photo", this.newPhoto, config)
+                            .then(function(response) {
+                                if (response.status === 200) {
+                                    this.$bvToast.toast("Photo successfully changed", {
+                                        title: "Success",
+                                        autoHideDelay: 3000,
+                                    });
+                                } else if (response.status === 201) {
+                                    this.$bvToast.toast("Photo successfully created", {
+                                        title: "Success",
+                                        autoHideDelay: 3000,
+                                    });
+                                }
+
+                                this.init();
+                                this.closeUploadModal();
+                            }, function(error) {
+                                this.closeUploadModal();
+                                if (error.status === 400) {
+                                    this.$bvToast.toast("Bad photo information, please try again with another photo!", {
+                                        title: "Bad photo information",
+                                        autoHideDelay: 3000,
+                                    });
+                                } else if (error.status === 401) {
+                                    this.$bvToast.toast("You must be logged in to upload a new photo!", {
+                                        title: "Authentication Missing",
+                                        autoHideDelay: 3000,
+                                    });
+                                } else if (error.status === 403) {
+                                    this.$bvToast.toast("You cannot upload a photo for another user", {
+                                        title: "Authentication Error",
+                                        autoHideDelay: 3000,
+                                    });
+                                } else if (error.status === 404) {
+                                    this.$bvToast.toast("User not found!", {
+                                        title: "Not found error",
+                                        autoHideDelay: 3000,
+                                    });
+                                } else {
+                                    this.$bvToast.toast("Unexpected error: " + error.statusText, {
+                                        title: "Unexpected Error",
+                                        autoHideDelay: 3000,
+                                    });
+                                }
+                            });
+                    } else {
+                        this.selectFileErrorPresent = true;
+                        this.selectFileError = "The file is too large!";
+                    }
+                } else {
+                    this.selectFileErrorPresent = true;
+                    this.selectFileError = "Please choose a file to upload!";
+                }
+            },
+            deletePhoto() {
+                let config = {
+                    headers: {
+                        "X-Authorization": this.$cookies.get("user_session"),
+                    },
+                };
+
+                this.$http.delete(url + "/users/" + this.$route.params.userId + "/photo", config)
+                    .then(function(response) {
+                    this.$bvToast.toast("Photo successfully deleted", {
+                        title: "Success",
+                        autoHideDelay: 3000,
+                    });
+
+                    this.userImage = null;
+                    this.init();
+                    this.closeUploadModal();
+                    }, function(error) {
+                        this.closeUploadModal();
+                        if (error.status === 401) {
+                            this.$bvToast.toast("You must be logged in to upload a new photo!", {
+                                title: "Authentication Missing",
+                                autoHideDelay: 3000,
+                            });
+                        } else if (error.status === 403) {
+                            this.$bvToast.toast("You cannot upload a photo for another user", {
+                                title: "Authentication Error",
+                                autoHideDelay: 3000,
+                            });
+                        } else if (error.status === 404) {
+                            this.$bvToast.toast("User not found!", {
+                                title: "Not found error",
+                                autoHideDelay: 3000,
+                            });
+                        } else {
+                            this.$bvToast.toast("Unexpected error: " + error.statusText, {
+                                title: "Unexpected Error",
+                                autoHideDelay: 3000,
+                            });
+                        }
+                    });
             }
         },
         watch: {
@@ -261,5 +406,16 @@
 </script>
 
 <style scoped>
+    h3 {
+        text-align: center;
+    }
 
+    #editButton {
+        width: 5rem;
+        margin-left: Calc(50% - 2.5rem);
+    }
+
+    .imgClass {
+        margin-left: Calc(50% - 100px);
+    }
 </style>

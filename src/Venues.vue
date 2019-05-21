@@ -4,7 +4,7 @@
             <b-row>
                 <!--City filter dropdown-->
                 <b-col md="2" class="my-1">
-                    <b-form-group label="Select City:">
+                    <b-form-group label="Select City:" id="selectCity">
                         <b-input-group>
                             <b-form-select v-model="selectedCity" :options="cityOptions" v-on:change="getVenues">
                                 <option slot="first" :value="null">--Select City--</option>
@@ -38,7 +38,7 @@
 
                 <!--Max Cost Rating-->
                 <b-col md="2" class="my-1">
-                    <b-form-group label="Max Cost Rating:">
+                    <b-form-group label="Max Cost Rating:" id="maxCostRating">
                         <b-form-select v-model="selectedCost" :options="costOptions" v-on:change="getVenues">
                             <option slot="first" :value="null">--Select Max Cost--</option>
                         </b-form-select>
@@ -53,18 +53,10 @@
                 </b-col>
 
                 <b-col id="adminToggle" class="buttons">
-                    <b-button v-on:click="getVenues" variant="primary" :pressed.sync="adminToggle">My Venues</b-button>
+                    <b-button v-on:click="toggleMyVenues" variant="primary" :pressed="adminToggle">My Venues</b-button>
                     <b-button v-on:click="clearFilters" variant="primary">Clear Filters</b-button>
                     <b-button v-on:click="newVenueFunc" variant="primary">Add Venue</b-button>
                 </b-col>
-
-                <!--<b-col class="buttons">-->
-                    <!---->
-                <!--</b-col>-->
-
-                <!--<b-col class="buttons">-->
-                    <!---->
-                <!--</b-col>-->
             </b-row>
 
             <b-table
@@ -91,7 +83,7 @@
                     </div>
 
                     <div v-else>
-                        <b-img :src="defaultImage" fluid v-bind="imageSize"></b-img>
+                        <b-img src="/src/assets/default.png" fluid v-bind="imageSize"></b-img>
                     </div>
                 </template>
 
@@ -238,53 +230,34 @@
                     secondIndex = (this.currentPage - 1) * this.perPage + (this.items.length % this.perPage);
                 }
                 return "" + firstIndex + "-" + secondIndex;
+            },
+            fields() {
+                let fields = [
+                    {label: "Name", sortable: true, key: "venueName"},
+                    {label: "Category", sortable: true, key: "categoryName"},
+                    {label: "City", sortable: true, key: "city"},
+                    {label: "Description", sortable: false, key: "shortDescription"},
+                    {label: "Star Rating", sortable: true, key: "meanStarRating"},
+                    {label: "Cost", key: "modeCostRating", sortable: true, formatter: value => {
+                        if (value === 0) {
+                            return "Free";
+                        } else {
+                            return "$".repeat(value);
+                        }
+                    }},
+                    {label: "Photo", sortable: false, key: "primaryPhoto"},
+                    {label: "Details", sortable: false, key: "details"}];
+
+                if (this.distancePresent) {
+                    fields.splice(4, 0, {label: "Distance", key: "distance", sortable: true, formatter: value =>
+                        {return Math.round(value * 100) / 100 + "km";}});
+                }
+                return fields;
             }
 
         },
         data() {
             return {
-                fields: {
-                    venueName: {
-                        label: "Name",
-                        sortable: true
-                    },
-                    categoryName: {
-                        label: "Category",
-                        sortable: true,
-                        key: "category.categoryName"
-                    },
-                    city: {
-                        label: "City",
-                        sortable: true,
-                    },
-                    shortDescription: {
-                        label: "Description",
-                        sortable: false
-                    },
-                    meanStarRating: {
-                        label: "Star Rating",
-                        sortable: true
-                    },
-                    modeCostRating: {
-                        label: "Cost",
-                        sortable: true,
-                        formatter: value => {
-                            if (value === 0) {
-                                return "Free";
-                            } else {
-                                return "$".repeat(value);
-                            }
-                        }
-                    },
-                    primaryPhoto: {
-                        label: "Photo",
-                        sortable: false
-                    },
-                    details: {
-                        label: "Details",
-                        sortable: false
-                    }
-                },
                 items: [],
                 isBusy: true,
                 filter: "",
@@ -294,7 +267,6 @@
                 selectedStarRating: null,
                 cities: [],
                 imageSize: {width: 75, height: 75},
-                defaultImage: require("./assets/default.png"),
                 newVenue: {
                     venueName: null,
                     categoryId: null,
@@ -326,6 +298,7 @@
                     {value: 0, text: "Free"}
                 ],
                 adminToggle: false,
+                distancePresent: null,
             }
         },
         mounted: function() {
@@ -339,56 +312,41 @@
 
                 let queryParams = this.getQueryParams();
 
-                this.$http.get(url + "/venues", {params: queryParams})
-                    .then(function(response) {
-                        let venues = response.body;
-                        console.log(venues);
-                        let promises = [];
+                this.$getLocation().then(coordinates => {
+                    queryParams.myLatitude = coordinates.lat;
+                    queryParams.myLongitude = coordinates.lng;
 
-                        for (let i = 0; i < venues.length; i++) {
-                            promises.push(this.$http.get(url + "/venues/" + venues[i].venueId));
-                        }
 
-                        Promise.all(promises).then(function(values) {
-                            let tempVenues = [];
+                    this.$http.get(url + "/venues", {params: queryParams})
+                        .then(function(response) {
+                            this.items = response.body;
+                            this.isBusy = false;
 
-                            for (let i = 0; i < values.length; i++) {
-                                let toPush = values[i].body;
-
-                                vueComp.cities.push(toPush.city);
-
-                                if (venues[i].meanStarRating) {
-                                    toPush.meanStarRating = venues[i].meanStarRating;
-                                } else {
-                                    toPush.meanStarRating = 3;
-                                }
-
-                                if (venues[i].modeCostRating) {
-                                    toPush.modeCostRating = venues[i].modeCostRating;
-                                } else {
-                                    toPush.modeCostRating = 0;
-                                }
-
-                                toPush.venueId = venues[i].venueId;
-
-                                if (venues[i].primaryPhoto) {
-                                    toPush.photoUrl = url + "/venues/" + venues[i].venueId + "/photos/" + venues[i].primaryPhoto;
-                                }
-
-                                tempVenues.push(toPush);
-                            }
-
-                            vueComp.items = tempVenues;
-                            vueComp.isBusy = false;
-                        }, function(errors) {
-                            console.log(errors);
+                            this.getCategories();
+                            this.distancePresent = true;
+                        }, function(error) {
+                            this.$bvToast.toast("Error: " + error.statusText, {
+                                title: "Error",
+                                autoHideDelay: 3000,
+                            });
                         });
-                    }, function(error) {
-                        this.$bvToast.toast("Error: " + error.statusText, {
-                            title: "Error",
-                            autoHideDelay: 3000,
+                }).catch(() => {
+                    this.$http.get(url + "/venues", {params: queryParams})
+                        .then(function(response) {
+                            this.items = response.body;
+                            this.isBusy = false;
+
+                            this.getCategories();
+                            this.distancePresent = false;
+                        }, function(error) {
+                            this.$bvToast.toast("Error: " + error.statusText, {
+                                title: "Error",
+                                autoHideDelay: 3000,
+                            });
                         });
-                    });
+                });
+
+
             },
 
             getQueryParams: function() {
@@ -423,8 +381,9 @@
                             autoHideDelay: 3000,
                         });
                     }
-
                 }
+
+
 
                 return queryParams;
             },
@@ -441,6 +400,12 @@
                                 value: category.categoryId,
                                 text: category.categoryName
                             });
+
+                            for (let k = 0; k < this.items.length; k++) {
+                                if (this.items[k].categoryId === category.categoryId) {
+                                    this.items[k].categoryName = category.categoryName;
+                                }
+                            }
                         }
 
                         this.categories = categories;
@@ -533,9 +498,118 @@
             resetModal() {
                  Object.keys(this.newVenue).forEach(v => this.newVenue[v] = null);
                  Object.keys(this.formState).forEach(v => this.formState[v] = null);
+            },
+
+            toggleMyVenues() {
+                if (!this.$cookies.isKey("user_session")) {
+                    this.$cookies.set("previous_page", this.$router.currentRoute.fullPath);
+                    this.$router.push("/login");
+                } else {
+                    this.adminToggle = !this.adminToggle;
+                    this.getVenues();
+                }
             }
         }
     }
+    // let promises = [];
+    //
+    // for (let i = 0; i < venues.length; i++) {
+    //     promises.push(this.$http.get(url + "/venues/" + venues[i].venueId));
+    // }
+    //
+    // Promise.all(promises).then(function(values) {
+    //     let tempVenues = [];
+    //
+    //     for (let i = 0; i < values.length; i++) {
+    //         let toPush = values[i].body;
+    //
+    //         vueComp.cities.push(toPush.city);
+    //
+    //         if (venues[i].meanStarRating) {
+    //             toPush.meanStarRating = venues[i].meanStarRating;
+    //         } else {
+    //             toPush.meanStarRating = 3;
+    //         }
+    //
+    //         if (venues[i].modeCostRating) {
+    //             toPush.modeCostRating = venues[i].modeCostRating;
+    //         } else {
+    //             toPush.modeCostRating = 0;
+    //         }
+    //
+    //         toPush.venueId = venues[i].venueId;
+    //
+    //         if (venues[i].primaryPhoto) {
+    //             toPush.photoUrl = url + "/venues/" + venues[i].venueId + "/photos/" + venues[i].primaryPhoto;
+    //         }
+    //
+    //         if (venues[i].distance) {
+    //             toPush.distance = venues[i].distance;
+    //             vueComp.fields.distance = {
+    //                 label: "Distance",
+    //                 sortable: true,
+    //                 formatter: value => {
+    //                     return String.format("%.02f", value) + "km";
+    //                 }
+    //             }
+    //         } else {
+    //             toPush.distance = null;
+    //         }
+    //
+    //         tempVenues.push(toPush);
+    //     }
+    //
+    //     vueComp.items = tempVenues;
+    //     vueComp.isBusy = false;
+    // }, function(errors) {
+    //     this.$bvToast.toast("Errors: " + errors.statusText, {
+    //         title: "Error",
+    //         autoHideDelay: 3000,
+    //     });
+    // });
+
+    // fields: {
+    //     venueName: {
+    //         label: "Name",
+    //         sortable: true
+    //     },
+    //     categoryName: {
+    //         label: "Category",
+    //         sortable: true,
+    //         key: "categoryName"
+    //     },
+    //     city: {
+    //         label: "City",
+    //         sortable: true,
+    //     },
+    //     shortDescription: {
+    //         label: "Description",
+    //         sortable: false
+    //     },
+    //     meanStarRating: {
+    //         label: "Star Rating",
+    //         sortable: true
+    //     },
+    //     modeCostRating: {
+    //         label: "Cost",
+    //         sortable: true,
+    //         formatter: value => {
+    //             if (value === 0) {
+    //                 return "Free";
+    //             } else {
+    //                 return "$".repeat(value);
+    //             }
+    //         }
+    //     },
+    //     primaryPhoto: {
+    //         label: "Photo",
+    //         sortable: false
+    //     },
+    //     details: {
+    //         label: "Details",
+    //         sortable: false
+    //     }
+    // },
 </script>
 
 <style scoped>
@@ -548,4 +622,14 @@
     #adminToggle {
         min-width: 8rem;
     }
+
+    #maxCostRating {
+        max-width: 10rem;
+    }
+
+    #selectCity {
+        max-width: 15rem;
+    }
 </style>
+
+

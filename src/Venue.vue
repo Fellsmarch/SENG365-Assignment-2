@@ -14,7 +14,7 @@
                             <b-img  :src="primaryPhotoUrl" fluid v-bind="imageSize"></b-img>
                         </div>
                         <div v-else>
-                            <b-img :src="defaultImage" fluid v-bind="imageSize"></b-img>
+                            <b-img src="/src/assets/default.png" fluid v-bind="imageSize"></b-img>
                         </div>
 
                         <div id="venueTitles" v-if="loadingComplete">
@@ -260,7 +260,6 @@
         data() {
             return {
                 imageSize: {width: 200, height: 200},
-                defaultImage: require("./assets/default.png"),
                 venueData: {photos: null, },
                 primaryPhoto: null,
                 loadingComplete: false,
