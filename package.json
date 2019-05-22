@@ -2,7 +2,6 @@
   "name": "assignment-2",
   "description": "SENG365 Assignment 2: Web Client",
   "version": "1.0.0",
-  "author": "hgc25 <hgc25@uclive.ac.nz>",
   "license": "MIT",
   "private": true,
   "scripts": {

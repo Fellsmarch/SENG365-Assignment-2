@@ -133,4 +133,11 @@
     .reviewBody {
         min-width: 20rem;
     }
+
+    .img-fluid {
+        max-height: 480px;
+        background-position: 50% 50%;
+        background-size: contain;
+        object-fit: contain;
+    }
 </style>

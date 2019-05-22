@@ -90,12 +90,10 @@
                             </b-col>
                         </b-row>
 
-                        <b-row align-v="center">
-                            <b-col sm="4">
+                        <b-row id="buttons" align-v="center">
+                                <b-button id="photoButton" v-if="userIsAdmin" variant="primary" v-on:click="showUploadModal">Upload Photo</b-button>
                                 <b-button id="editButton" v-if="userIsAdmin" variant="primary" v-on:click="editVenue">Edit</b-button>
                                 <b-button id="writeReview" v-if="!userIsAdmin" variant="primary" v-on:click="showReviewModal">Write Review</b-button>
-                            </b-col>
-
                         </b-row>
                     </div>
 
@@ -109,14 +107,41 @@
                     <b-row>
                         <b-card id="photos" header="Photos" border-variant="primary" header-bg-variant="primary" header-text-variant="white">
                             <div>
-                                <gallery :images="images" :index="index" @close="index = null"></gallery>
-                                <div
-                                    class="image"
-                                    v-for="(image, imageIndex) in images"
-                                    :key="imageIndex"
-                                    @click="index = imageIndex"
-                                    :style="{ backgroundImage: 'url(' + image + ')', width: '300px', height: '200px' }"
-                                ></div>
+                                <b-carousel
+                                    v-model="slide"
+                                    :interval="5000"
+                                    controls
+                                    indicators
+                                    background="#efefef"
+                                    img-width="1024"
+                                    img-height="480"
+                                    :contain="true"
+                                    style="text-shadow: 1px 1px 2px; height: 480px;">
+                                        <div v-for="image in images">
+                                            <b-carousel-slide v-bind:img-src='image'>
+                                                <div v-if="userIsAdmin">
+                                                    <b-button variant="danger" v-on:click="deleteImage(image)" class="little-fade">Delete</b-button>
+                                                    <b-button variant="primary" v-on:click="makeImagePrimary(image)" class="little-fade">Make Primary</b-button>
+                                                </div>
+                                            </b-carousel-slide>
+                                        </div>
+                                    <!--<div v-else>-->
+                                        <!--<b-carousel-slide img-src="/src/assets/default.png" style="height: 480px; background-position: 50% 50%;">-->
+                                            <!--<h1 style="text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;">No images found for this venue</h1>-->
+                                        <!--</b-carousel-slide>-->
+                                    <!--</div>-->
+                                </b-carousel>
+                                <!--<gallery :images="images" :index="index" @close="index = null"></gallery>-->
+                                <!--<div-->
+                                    <!--class="image"-->
+                                    <!--v-for="(image, imageIndex) in images"-->
+                                    <!--:key="imageIndex"-->
+                                    <!--@click="index = imageIndex"-->
+                                    <!--:style="{ backgroundImage: 'url(' + image + ')', width: '300px', height: '200px' }"-->
+                                <!--&gt;<div v-if="userIsAdmin">-->
+                                    <!--<b-button variant="danger">Delete</b-button>-->
+                                    <!--<b-button variant="primary">Make Primary</b-button>-->
+                                <!--</div></div>-->
                             </div>
                         </b-card>
                     </b-row>
@@ -288,6 +313,34 @@
                 <b-button variant="primary" v-on:click="createReview">Submit</b-button>
             </template>
         </b-modal>
+
+        <b-modal id="uploadPhotoModal"
+                 ref="uploadPhotoModal"
+                 title="Upload Photo"
+                 size="lg"
+                 centered>
+
+            <b-form-file v-model="newPhoto"
+                         :state="newPhoto ? true : null"
+                         placeholder="Choose an image..."
+                         drop-placeholder="Drop image here..."
+                         v-on:change="selectFileErrorPresent = false"
+                         accept="image/jpeg, image/png, image/jpg">
+            </b-form-file>
+
+            <b-form-input v-model="photoDescription" style="margin-top: 1rem;" placeholder="Photo Description"></b-form-input>
+
+
+            <template slot="modal-footer">
+                <div v-if="selectFileErrorPresent" class="text-danger">
+                    {{ selectFileError }}
+                </div>
+                <b-form-checkbox
+                    v-model="primaryPhotoCheck">Primary Photo</b-form-checkbox>
+                <b-button v-on:click="closeUploadModal">Cancel</b-button>
+                <b-button variant="primary" v-on:click="uploadPhoto">Upload</b-button>
+            </template>
+        </b-modal>
     </div>
 </template>
 
@@ -381,6 +434,13 @@
                 ],
                 reviewFormError: "",
                 reviewFormErrorPresent: false,
+                newPhoto: null,
+                selectFileError: "",
+                selectFileErrorPresent: false,
+                primaryPhotoCheck: false,
+                photoDescription: "",
+                slide: null,
+
             }
         },
 
@@ -398,6 +458,8 @@
                         this.venueData = response.body;
                         this.userIsAdmin = this.venueData.admin.userId == this.$cookies.get("user_id"); //Double equals intentional here as types can be different so I just ignore them
 
+                        let imagesToAdd = [];
+
                         for (let i = 0; i < this.venueData.photos.length; i++) {
                             let photo = this.venueData.photos[i];
 
@@ -408,8 +470,10 @@
                                 this.primaryPhotoUrl = photoUrl;
                             }
 
-                            this.images.push(photoUrl);
+                            imagesToAdd.push(photoUrl);
                         }
+
+                        this.images = imagesToAdd;
 
                         if (this.venueData.longDescription) {
                             this.description = this.venueData.shortDescription + "...";
@@ -701,6 +765,171 @@
                     this.reviewFormError = "Please enter a star rating";
                     this.reviewFormErrorPresent = true;
                 }
+            },
+            showUploadModal() {
+                this.$nextTick(() => {this.$refs.uploadPhotoModal.show()});
+            },
+            closeUploadModal() {
+                this.$nextTick(() => {this.$refs.uploadPhotoModal.hide()});
+            },
+            uploadPhoto() {
+                if (this.photoDescription) {
+                    if (this.newPhoto) {
+                        if (this.newPhoto.size <= 20000000) {
+                            let data = new FormData();
+
+                            data.append("photo", this.newPhoto);
+                            data.append("description", this.photoDescription);
+                            data.append("makePrimary", this.primaryPhotoCheck);
+
+
+                            let config = {
+                                // emulateJSON: false,
+                                headers: {
+                                    "X-Authorization": this.$cookies.get("user_session"),
+                                },
+                            };
+
+                            this.loading = true;
+
+                            this.$http.post(url + "/venues/" + this.$route.params.venueId + "/photos", data, config)
+                                .then(function(response) {
+                                    if (response.status === 200) {
+                                        this.$bvToast.toast("Photo successfully changed", {
+                                            title: "Success",
+                                            autoHideDelay: 3000,
+                                        });
+                                    } else if (response.status === 201) {
+                                        this.$bvToast.toast("Photo successfully created", {
+                                            title: "Success",
+                                            autoHideDelay: 3000,
+                                        });
+                                    }
+
+                                    this.getVenue();
+                                    this.closeUploadModal();
+                                }, function(error) {
+                                    this.closeUploadModal();
+                                    if (error.status === 400) {
+                                        this.$bvToast.toast("Bad photo information, please try again with another photo!", {
+                                            title: "Bad photo information",
+                                            autoHideDelay: 3000,
+                                        });
+                                    } else if (error.status === 401) {
+                                        this.$bvToast.toast("You must be logged in to upload a new photo!", {
+                                            title: "Authentication Missing",
+                                            autoHideDelay: 3000,
+                                        });
+                                    } else if (error.status === 403) {
+                                        this.$bvToast.toast("You cannot upload a venue you are not the administrator of!", {
+                                            title: "Authentication Error",
+                                            autoHideDelay: 3000,
+                                        });
+                                    } else if (error.status === 404) {
+                                        this.$bvToast.toast("Venue not found!", {
+                                            title: "Not found error",
+                                            autoHideDelay: 3000,
+                                        });
+                                    } else {
+                                        this.$bvToast.toast("Unexpected error: " + error.statusText, {
+                                            title: "Unexpected Error",
+                                            autoHideDelay: 3000,
+                                        });
+                                    }
+                                });
+                        } else {
+                            this.selectFileErrorPresent = true;
+                            this.selectFileError = "The file is too large!";
+                        }
+                    } else {
+                        this.selectFileErrorPresent = true;
+                        this.selectFileError = "Please choose a file to upload!";
+                    }
+                } else {
+                    this.selectFileErrorPresent = true;
+                    this.selectFileError = "Please enter a description for the photo!";
+                }
+
+            },
+
+            deleteImage(imageUrl) {
+                let config = {
+                    headers: {
+                        "X-Authorization": this.$cookies.get("user_session"),
+                    },
+                };
+
+                this.$http.delete(imageUrl, config)
+                    .then(function(response) {
+                        this.$bvToast.toast("Photo deleted successfully", {
+                            title: "Success",
+                            autoHideDelay: 3000,
+                        });
+
+                        this.getVenue();
+                    }, function(error) {
+                        if (error.status === 401) {
+                            this.$bvToast.toast("You must be logged in to delete a photo!", {
+                                title: "Authentication Missing",
+                                autoHideDelay: 3000,
+                            });
+                        } else if (error.status === 403) {
+                            this.$bvToast.toast("You cannot delete a photo you are not the administrator of!", {
+                                title: "Authentication Error",
+                                autoHideDelay: 3000,
+                            });
+                        } else if (error.status === 404) {
+                            this.$bvToast.toast("Venue or photo not found!", {
+                                title: "Not found error",
+                                autoHideDelay: 3000,
+                            });
+                        } else {
+                            this.$bvToast.toast("Unexpected error: " + error.statusText, {
+                                title: "Unexpected Error",
+                                autoHideDelay: 3000,
+                            });
+                        }
+                    });
+            },
+
+            makeImagePrimary(imageUrl) {
+                let config = {
+                    headers: {
+                        "X-Authorization": this.$cookies.get("user_session"),
+                    },
+                };
+
+                this.$http.post(imageUrl + "/setPrimary", null, config)
+                    .then(function(response) {
+                        this.$bvToast.toast("Photo updated successfully", {
+                            title: "Success",
+                            autoHideDelay: 3000,
+                        });
+
+                        this.getVenue();
+                    }, function(error) {
+                        if (error.status === 401) {
+                            this.$bvToast.toast("You must be logged in to update a photo!", {
+                                title: "Authentication Missing",
+                                autoHideDelay: 3000,
+                            });
+                        } else if (error.status === 403) {
+                            this.$bvToast.toast("You cannot update a venue's photo you are not the administrator of!", {
+                                title: "Authentication Error",
+                                autoHideDelay: 3000,
+                            });
+                        } else if (error.status === 404) {
+                            this.$bvToast.toast("Venue or photo not found!", {
+                                title: "Not found error",
+                                autoHideDelay: 3000,
+                            });
+                        } else {
+                            this.$bvToast.toast("Unexpected error: " + error.statusText, {
+                                title: "Unexpected Error",
+                                autoHideDelay: 3000,
+                            });
+                        }
+                    });
             }
         }
     }
@@ -757,6 +986,10 @@
     }
 
     #editButton {
+        /*margin-left: 1rem;*/
+    }
+
+    #buttons {
         margin-left: 1rem;
     }
 </style>
